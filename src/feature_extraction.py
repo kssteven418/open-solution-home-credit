@@ -42,7 +42,7 @@ class FeatureJoiner(BaseTransformer):
         self.id_column = id_column
         self.use_nan_count = use_nan_count
 
-    def transform(self, numerical_feature_list, categorical_feature_list, **kwargs):
+    def transform(self, dump, numerical_feature_list, categorical_feature_list, **kwargs):
         features = numerical_feature_list + categorical_feature_list
         for feature in features:
             feature.set_index(self.id_column, drop=True, inplace=True)
@@ -54,6 +54,19 @@ class FeatureJoiner(BaseTransformer):
         outputs['features'] = features
         outputs['feature_names'] = list(features.columns)
         outputs['categorical_features'] = self._get_feature_names(categorical_feature_list)
+        #outputs['categorical_features'] = []
+
+        print('---')
+        print(type(features))
+        print(features)
+        print('---')
+        print(outputs['feature_names'])
+        print('---')
+        print(outputs['categorical_features'])
+        print('---')
+
+        if dump:
+            features.to_csv('feature_engineered.csv', mode='w')
         return outputs
 
     def _get_feature_names(self, dataframes):
@@ -83,16 +96,25 @@ class FeatureConcat(BaseTransformer):
 class CategoricalEncoder(BaseTransformer):
     def __init__(self, **kwargs):
         super().__init__()
-        self.encoder_class = ce.OrdinalEncoder
+        self.encoder_class = ce.OrdinalEncoder # map to a column of random intergers
         self.categorical_encoder = None
 
-    def fit(self, X, categorical_columns, **kwargs):
-        self.categorical_encoder = self.encoder_class(cols=categorical_columns, **kwargs)
+    def fit(self, X, categorical_columns, onehot, **kwargs):
+        print('ONEHOT', onehot)
+        if not onehot:
+            self.categorical_encoder = self.encoder_class(cols=categorical_columns, **kwargs)
+        else:
+            self.encoder_class = ce.OneHotEncoder
+            self.categorical_encoder = self.encoder_class(cols=categorical_columns, **kwargs)
         self.categorical_encoder.fit(X)
         return self
 
     def transform(self, X, **kwargs):
+        print('before')
+        print(X)
         X_ = self.categorical_encoder.transform(X)
+        print('after')
+        print(X_)
         return {'categorical_features': X_}
 
     def load(self, filepath):

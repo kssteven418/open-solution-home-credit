@@ -269,7 +269,7 @@ def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predi
         shutil.rmtree(params.experiment_directory)
 
     if model_level == 'first':
-        tables = _read_data(dev_mode)
+        tables = _read_data(dev_mode) #SH : read here
         main_table_train = tables.train_set
         main_table_test = tables.test_set
     elif model_level == 'second':
@@ -295,6 +295,7 @@ def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predi
         logger.info('Train shape: {}'.format(train_data_split.shape))
         logger.info('Valid shape: {}'.format(valid_data_split.shape))
 
+        #SH : loop
         score, out_of_fold_prediction, test_prediction = _fold_fit_evaluate_predict_loop(train_data_split,
                                                                                          valid_data_split,
                                                                                          main_table_test,
@@ -347,6 +348,7 @@ def make_submission(submission_filepath):
               .format(submission_filepath, params.kaggle_message))
 
 
+#SH : This is where the data is read
 def _read_data(dev_mode):
     logger.info('Reading data...')
     if dev_mode:
@@ -394,6 +396,8 @@ def _read_data(dev_mode):
 
     raw_data = {}
 
+    # read_csv : csv -> pandas dataframe
+    # maybe accessed by its key string
     logger.info('Reading application_train ...')
     application_train = pd.read_csv(params.train_filepath, nrows=nrows)
     logger.info("Reading application_test ...")
@@ -434,6 +438,7 @@ def _get_fold_generator(target_values):
     return fold_generator
 
 
+# SH : loop function
 def _fold_fit_evaluate_predict_loop(train_data_split, valid_data_split, test, tables, fold_id, pipeline_name,
                                     model_level):
     score, y_valid_pred, pipeline = _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables,

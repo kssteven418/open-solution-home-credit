@@ -7,6 +7,28 @@ from sklearn.svm import SVC
 
 from . import pipeline_blocks as blocks
 
+def feature_extraction(config, train_mode, suffix):
+    print('HELLO~')
+    if train_mode:
+        persist_output = True
+        cache_output = True
+        load_persisted_output = True
+    else:
+        persist_output = False
+        cache_output = True
+        load_persisted_output = False
+
+    features = blocks.feature_extraction(config,
+                                         False,
+                                         suffix,
+                                         dump=True,
+                                         onehot=True,
+                                         persist_output=persist_output,
+                                         cache_output=cache_output,
+                                         load_persisted_output=load_persisted_output
+                                         )
+    return features
+
 
 def light_gbm(config, train_mode, suffix=''):
     if train_mode:
@@ -252,7 +274,8 @@ def sklearn_pipeline_stacking(config, ClassifierClass, clf_name, train_mode, suf
     return log_reg
 
 
-PIPELINES = {'lightGBM': light_gbm,
+PIPELINES = {'feature_extraction': feature_extraction,
+             'lightGBM': light_gbm,
              'catboost': catboost,
              'XGBoost': xgboost,
              'neural_network': partial(neural_network,

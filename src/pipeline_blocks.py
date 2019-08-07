@@ -166,7 +166,7 @@ def classifier_sklearn(features,
     return sklearn_clf
 
 
-def feature_extraction(config, train_mode, suffix, **kwargs):
+def feature_extraction(config, train_mode, suffix, dump=False, onehot=False, **kwargs):
     application_cleaned = _application_cleaning(config, **kwargs)
     bureau_cleaned = _bureau_cleaning(config, **kwargs)
     bureau_balance_cleaned = _bureau_balance_cleaning(config, **kwargs)
@@ -194,7 +194,7 @@ def feature_extraction(config, train_mode, suffix, **kwargs):
     pos_cash_balance_agg = _pos_cash_balance_groupby_agg(pos_cash_balance_cleaned, config, **kwargs)
     previous_applications_agg = _previous_applications_groupby_agg(previous_application_cleaned, config, **kwargs)
 
-    application_categorical_encoder = _application_categorical_encoder(application, config, **kwargs)
+    application_categorical_encoder = _application_categorical_encoder(application, config, onehot=onehot, **kwargs)
     previous_application_categorical_encoder = _previous_application_categorical_encoder(previous_application, config,
                                                                                          **kwargs)
     application_previous_application_categorical_encoder = _application_previous_application_categorical_encoder(
@@ -205,6 +205,7 @@ def feature_extraction(config, train_mode, suffix, **kwargs):
 
     if config.feature_selection.use_application:
         numerical_features.append(application)
+    """
     if config.feature_selection.use_bureau:
         numerical_features.append(bureau)
     if config.feature_selection.use_bureau_balance:
@@ -231,16 +232,20 @@ def feature_extraction(config, train_mode, suffix, **kwargs):
         numerical_features.append(pos_cash_balance_agg)
     if config.feature_selection.use_previous_applications_aggregations:
         numerical_features.append(previous_applications_agg)
+    """
     if config.feature_selection.use_application_categorical_features:
         categorical_features.append(application_categorical_encoder)
+    """
     if config.feature_selection.use_previous_application_categorical_features:
         categorical_features.append(previous_application_categorical_encoder)
     if config.feature_selection.use_application_previous_application_categorical_features:
         categorical_features.append(application_previous_application_categorical_encoder)
+    """
 
     feature_combiner = _join_features(numerical_features=numerical_features,
                                       categorical_features=categorical_features,
-                                      config=config, train_mode=train_mode, **kwargs)
+                                      config=config, train_mode=train_mode,
+                                      dump=dump, **kwargs)
 
     if train_mode:
         idx_merge, idx_merge_valid = _split_samples(feature_combiner, config, train_mode, suffix, **kwargs)
@@ -624,7 +629,7 @@ def concat_features(features_list, config, train_mode, suffix, **kwargs):
 
 def _join_features(numerical_features,
                    categorical_features,
-                   config, train_mode, suffix='', **kwargs):
+                   config, train_mode, dump=False, suffix='', **kwargs):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -638,6 +643,7 @@ def _join_features(numerical_features,
                           transformer=fe.FeatureJoiner(**config.feature_joiner),
                           input_steps=numerical_features + categorical_features,
                           adapter=Adapter({
+                              'dump': dump,
                               'numerical_feature_list': [
                                   E(feature.name, 'numerical_features') for feature in numerical_features],
                               'categorical_feature_list': [
@@ -677,12 +683,13 @@ def _split_samples(features, config, train_mode, suffix, **kwargs):
         return idx_merge
 
 
-def _application_categorical_encoder(application, config, **kwargs):
+def _application_categorical_encoder(application, config, onehot=False, **kwargs):
     categorical_encoder = Step(name='application_categorical_encoder',
                                transformer=fe.CategoricalEncoder(),
                                input_steps=[application],
                                adapter=Adapter({'X': E(application.name, 'categorical_features'),
-                                                'categorical_columns': E(application.name, 'categorical_columns')}),
+                                                'categorical_columns': E(application.name, 'categorical_columns'),
+                                                'onehot': onehot}),
                                experiment_directory=config.pipeline.experiment_directory,
                                **kwargs)
 
