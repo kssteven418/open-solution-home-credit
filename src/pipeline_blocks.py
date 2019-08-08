@@ -255,6 +255,10 @@ def feature_extraction(config, train_mode, suffix, dump=False, onehot=False, **k
         return idx_merge
 
 
+def feature_loader(config, train_mode, suffix, **kwargs):
+    feature_combiner = _load_features(config=config, train_mode=train_mode, **kwargs)
+
+
 def xgb_preprocessing(features, config, train_mode, suffix, **kwargs):
     if train_mode:
         features, features_valid = features
@@ -655,6 +659,21 @@ def _join_features(numerical_features,
                           load_persisted_output=load_persisted_output)
 
     return feature_joiner
+
+
+def _load_features(config, train_mode, suffix='', **kwargs):
+    if train_mode:
+        persist_output = True
+        cache_output = True
+        load_persisted_output = True
+    else:
+        persist_output = False
+        cache_output = True
+        load_persisted_output = False
+
+    print('Hello')
+    raise NotImplementedError
+
 
 
 def _split_samples(features, config, train_mode, suffix, **kwargs):

@@ -302,7 +302,8 @@ def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predi
                                                                                          tables,
                                                                                          fold_id,
                                                                                          pipeline_name,
-                                                                                         model_level)
+                                                                                         model_level,
+                                                                                         load_feature)
 
         logger.info('Fold {} ROC_AUC {}'.format(fold_id, score))
         ctx.channel_send('Fold {} ROC_AUC'.format(fold_id), 0, score)
@@ -465,9 +466,9 @@ def _get_fold_generator(target_values):
 
 # SH : loop function
 def _fold_fit_evaluate_predict_loop(train_data_split, valid_data_split, test, tables, fold_id, pipeline_name,
-                                    model_level):
+                                    model_level, load_feature):
     score, y_valid_pred, pipeline = _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables,
-                                                            fold_id, pipeline_name, cfg.SOLUTION_CONFIG, model_level)
+                                                            fold_id, pipeline_name, cfg.SOLUTION_CONFIG, model_level, load_feature)
     if model_level == 'first':
         test_data = {'main_table': {'X': test[cfg.ID_COLUMNS],
                                     'y': None,
@@ -515,7 +516,7 @@ def _fold_fit_evaluate_predict_loop(train_data_split, valid_data_split, test, ta
     return score, train_out_of_fold_prediction_chunk, test_out_of_fold_prediction_chunk
 
 
-def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id, pipeline_name, config, model_level):
+def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id, pipeline_name, config, model_level, load_feature):
     if model_level == 'first':
         train_data = {'main_table': {'X': train_data_split.drop(cfg.TARGET_COLUMNS, axis=1),
                                      'y': train_data_split[cfg.TARGET_COLUMNS].values.reshape(-1),
@@ -529,6 +530,7 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
                       'installments_payments': {'X': tables.installments_payments},
                       'pos_cash_balance': {'X': tables.pos_cash_balance},
                       'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                       }
 
         valid_data = {'main_table': {'X': valid_data_split.drop(cfg.TARGET_COLUMNS, axis=1),
@@ -541,6 +543,7 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
                       'installments_payments': {'X': tables.installments_payments},
                       'pos_cash_balance': {'X': tables.pos_cash_balance},
                       'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                       }
     elif model_level == 'second':
         drop_columns = cfg.TARGET_COLUMNS + ['fold_id']
@@ -577,7 +580,8 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
         raise NotImplementedError
 
     pipeline = PIPELINES[pipeline_name](config=config, train_mode=True,
-                                        suffix='_fold_{}'.format(fold_id))
+                                        suffix='_fold_{}'.format(fold_id),
+                                        load_feature=load_feature)
 
     logger.info('Start pipeline fit and transform on train')
     pipeline.clean_cache()

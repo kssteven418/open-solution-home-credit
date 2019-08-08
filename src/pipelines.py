@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 
 from . import pipeline_blocks as blocks
 
-def feature_extraction(config, train_mode, suffix=''):
+def feature_extraction(config, train_mode, suffix='', load_feature=False):
     print('HELLO~')
     if train_mode:
         persist_output = True
@@ -30,7 +30,7 @@ def feature_extraction(config, train_mode, suffix=''):
     return features
 
 
-def light_gbm(config, train_mode, suffix=''):
+def light_gbm(config, train_mode, suffix='', load_feature=False):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -40,21 +40,30 @@ def light_gbm(config, train_mode, suffix=''):
         cache_output = True
         load_persisted_output = False
 
-    features = blocks.feature_extraction(config,
+    if not load_feature:
+        features = blocks.feature_extraction(config,
+                                             train_mode,
+                                             suffix,
+                                             persist_output=persist_output,
+                                             cache_output=cache_output,
+                                             load_persisted_output=load_persisted_output
+                                             )
+        light_gbm = blocks.classifier_light_gbm(features,
+                                                config,
+                                                train_mode, suffix)
+    else:
+        features = blocks.feature_loader(config,
                                          train_mode,
                                          suffix,
                                          persist_output=persist_output,
                                          cache_output=cache_output,
                                          load_persisted_output=load_persisted_output
                                          )
-    light_gbm = blocks.classifier_light_gbm(features,
-                                            config,
-                                            train_mode, suffix)
 
     return light_gbm
 
 
-def catboost(config, train_mode, suffix=''):
+def catboost(config, train_mode, suffix='', load_feature=False):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -87,7 +96,7 @@ def catboost(config, train_mode, suffix=''):
     return catboost
 
 
-def xgboost(config, train_mode, suffix=''):
+def xgboost(config, train_mode, suffix='', load_feature=False):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -118,7 +127,7 @@ def xgboost(config, train_mode, suffix=''):
     return xgb
 
 
-def neural_network(config, train_mode, suffix='', normalize=False):
+def neural_network(config, train_mode, suffix='', normalize=False, load_feature=False):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -148,7 +157,7 @@ def neural_network(config, train_mode, suffix='', normalize=False):
     return neural_network
 
 
-def neural_network_stacking(config, train_mode, suffix='', normalize=False, use_features=False):
+def neural_network_stacking(config, train_mode, suffix='', normalize=False, use_features=False, load_feature=False):
     features_oof_preds = blocks.oof_predictions(config, train_mode, suffix,
                                                 persist_output=False,
                                                 cache_output=False,
@@ -185,7 +194,7 @@ def neural_network_stacking(config, train_mode, suffix='', normalize=False, use_
     return neural_network
 
 
-def sklearn_pipeline(config, ClassifierClass, clf_name, train_mode, suffix='', normalize=False):
+def sklearn_pipeline(config, ClassifierClass, clf_name, train_mode, suffix='', normalize=False, load_feature=False):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -220,7 +229,7 @@ def sklearn_pipeline(config, ClassifierClass, clf_name, train_mode, suffix='', n
     return sklearn_clf
 
 
-def light_gbm_stacking(config, train_mode, suffix='', use_features=False):
+def light_gbm_stacking(config, train_mode, suffix='', use_features=False, load_feature=False):
     features_oof_preds = blocks.oof_predictions(config, train_mode, suffix,
                                                 persist_output=False,
                                                 cache_output=False,
@@ -242,7 +251,7 @@ def light_gbm_stacking(config, train_mode, suffix='', use_features=False):
     return light_gbm
 
 
-def xgboost_stacking(config, train_mode, suffix='', use_features=False):
+def xgboost_stacking(config, train_mode, suffix='', use_features=False, load_feature=False):
     if use_features:
         raise NotImplementedError
     features = blocks.oof_predictions(config, train_mode, suffix,
@@ -254,7 +263,7 @@ def xgboost_stacking(config, train_mode, suffix='', use_features=False):
     return xgboost
 
 
-def sklearn_pipeline_stacking(config, ClassifierClass, clf_name, train_mode, suffix=''):
+def sklearn_pipeline_stacking(config, ClassifierClass, clf_name, train_mode, suffix='', load_feature=False):
     features = blocks.oof_predictions(config, train_mode, suffix,
                                       persist_output=False,
                                       cache_output=False,
