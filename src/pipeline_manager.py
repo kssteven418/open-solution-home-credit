@@ -409,7 +409,8 @@ def _read_data(dev_mode, load_feature=False):
 
         logger.info("Loading features...")
         raw_data['loaded_features'] = pd.read_csv(params.load_features_filepath,
-                                                  nrows=nrows_installments_payments)
+                                                  nrows=nrows_installments_payments,
+                                                  index_col=[0])
 
         raw_data['bureau'] = None
         raw_data['credit_card_balance'] = None

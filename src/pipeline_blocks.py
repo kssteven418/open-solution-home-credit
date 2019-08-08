@@ -257,6 +257,12 @@ def feature_extraction(config, train_mode, suffix, dump=False, onehot=False, **k
 
 def feature_loader(config, train_mode, suffix, **kwargs):
     feature_combiner = _load_features(config=config, train_mode=train_mode, **kwargs)
+    if train_mode:
+        idx_merge, idx_merge_valid = _split_samples(feature_combiner, config, train_mode, suffix, **kwargs)
+        return idx_merge, idx_merge_valid
+    else:
+        idx_merge = _split_samples(feature_combiner, config, train_mode, suffix, **kwargs)
+        return idx_merge
 
 
 def xgb_preprocessing(features, config, train_mode, suffix, **kwargs):
@@ -672,7 +678,18 @@ def _load_features(config, train_mode, suffix='', **kwargs):
         load_persisted_output = False
 
     print('Hello')
-    raise NotImplementedError
+
+    feature_loader = Step(name='feature_loader{}'.format(suffix),
+                          transformer=fe.FeatureLoader(),
+                          input_data=['loaded_features'],
+                          adapter=Adapter({'features': E('loaded_features', 'X')
+                          }),
+                          experiment_directory=config.pipeline.experiment_directory,
+                          persist_output=persist_output,
+                          cache_output=cache_output,
+                          load_persisted_output=load_persisted_output)
+
+    return feature_loader
 
 
 

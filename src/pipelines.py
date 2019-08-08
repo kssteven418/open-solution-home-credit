@@ -59,6 +59,9 @@ def light_gbm(config, train_mode, suffix='', load_feature=False):
                                          cache_output=cache_output,
                                          load_persisted_output=load_persisted_output
                                          )
+        light_gbm = blocks.classifier_light_gbm(features,
+                                                config,
+                                                train_mode, suffix)
 
     return light_gbm
 

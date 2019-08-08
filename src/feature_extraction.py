@@ -36,6 +36,40 @@ class IDXMerge(BaseTransformer):
         return outputs
 
 
+class FeatureLoader(BaseTransformer):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+    def transform(self, features, **kwargs):
+        outputs = dict()
+        outputs['features'] = features
+        outputs['feature_names'] = list(features.columns)
+        outputs['categorical_features'] = []
+
+        print('LOADER')
+        print('---')
+        print(type(features))
+        print(features)
+        print('---')
+        print(outputs['feature_names'])
+        print('---')
+        print(outputs['categorical_features'])
+        print('---')
+
+        return outputs
+
+    def _get_feature_names(self, dataframes):
+        feature_names = []
+        for dataframe in dataframes:
+            try:
+                feature_names.extend(list(dataframe.columns))
+            except Exception as e:
+                print(e)
+                feature_names.append(dataframe.name)
+
+        return feature_names
+
+
 class FeatureJoiner(BaseTransformer):
     def __init__(self, id_column, use_nan_count=False, **kwargs):
         super().__init__()
