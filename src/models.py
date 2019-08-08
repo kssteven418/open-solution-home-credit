@@ -150,6 +150,12 @@ class LightGBM(BaseTransformer):
                                    feval=self.evaluation_function,
                                    callbacks=self.callbacks,
                                    **kwargs)
+        dump = self.estimator.dump_model()
+
+        from pprint import pprint
+        with open("dump_model.json", "w") as fout:
+            pprint(dump, fout)
+
         return self
 
     def transform(self, X, **kwargs):

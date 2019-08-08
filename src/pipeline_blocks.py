@@ -196,9 +196,9 @@ def feature_extraction(config, train_mode, suffix, dump=False, onehot=False, **k
 
     application_categorical_encoder = _application_categorical_encoder(application, config, onehot=onehot, **kwargs)
     previous_application_categorical_encoder = _previous_application_categorical_encoder(previous_application, config,
-                                                                                         **kwargs)
+                                                                                         onehot=onehot, **kwargs)
     application_previous_application_categorical_encoder = _application_previous_application_categorical_encoder(
-        application_previous_application, config, **kwargs)
+        application_previous_application, config, onehot=onehot, **kwargs)
 
     numerical_features = []
     categorical_features = []
@@ -696,26 +696,27 @@ def _application_categorical_encoder(application, config, onehot=False, **kwargs
     return categorical_encoder
 
 
-def _previous_application_categorical_encoder(previous_application, config, **kwargs):
+def _previous_application_categorical_encoder(previous_application, config, onehot=False, **kwargs):
     categorical_encoder = Step(name='previous_application_categorical_encoder',
                                transformer=fe.CategoricalEncoder(),
                                input_steps=[previous_application],
                                adapter=Adapter({'X': E(previous_application.name, 'categorical_features'),
-                                                'categorical_columns': E(previous_application.name,
-                                                                         'categorical_columns')}),
+                                                'categorical_columns': E(previous_application.name, 'categorical_columns'),
+                                                'onehot': onehot}),
                                experiment_directory=config.pipeline.experiment_directory,
                                **kwargs)
 
     return categorical_encoder
 
 
-def _application_previous_application_categorical_encoder(application_previous_application, config, **kwargs):
+def _application_previous_application_categorical_encoder(application_previous_application, config, onehot=False, **kwargs):
     categorical_encoder = Step(name='application_previous_application_categorical_encoder',
                                transformer=fe.CategoricalEncoder(),
                                input_steps=[application_previous_application],
                                adapter=Adapter({'X': E(application_previous_application.name, 'categorical_features'),
                                                 'categorical_columns': E(application_previous_application.name,
-                                                                         'categorical_columns')}),
+                                                                         'categorical_columns'),
+                                                'onehot': onehot}),
                                experiment_directory=config.pipeline.experiment_directory,
                                **kwargs)
 

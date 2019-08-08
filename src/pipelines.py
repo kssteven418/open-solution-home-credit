@@ -7,7 +7,7 @@ from sklearn.svm import SVC
 
 from . import pipeline_blocks as blocks
 
-def feature_extraction(config, train_mode, suffix):
+def feature_extraction(config, train_mode, suffix=''):
     print('HELLO~')
     if train_mode:
         persist_output = True

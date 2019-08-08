@@ -34,8 +34,8 @@ class PipelineManager:
     def train_evaluate_cv(self, pipeline_name, model_level, dev_mode):
         train_evaluate_cv(pipeline_name, model_level, dev_mode)
 
-    def train_evaluate_predict_cv(self, pipeline_name, model_level, dev_mode, submit_predictions):
-        train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predictions)
+    def train_evaluate_predict_cv(self, pipeline_name, model_level, dev_mode, submit_predictions, load_feature=False):
+        train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predictions, load_feature)
 
 
 def train(pipeline_name, dev_mode):
@@ -59,7 +59,7 @@ def train(pipeline_name, dev_mode):
 
     train_data = {'main_table': {'X': train_data_split.drop(cfg.TARGET_COLUMNS, axis=1),
                                  'y': train_data_split[cfg.TARGET_COLUMNS].values.reshape(-1),
-                                 'X_valid': valid_data_split.drop[cfg.TARGET_COLUMNS].values.reshape(-1),
+                                 'X_valid': valid_data_split.drop(cfg.TARGET_COLUMNS, axis=1),
                                  'y_valid': valid_data_split[cfg.TARGET_COLUMNS].values.reshape(-1),
                                  },
                   'application': {'X': tables.application},
@@ -263,13 +263,13 @@ def train_evaluate_cv_one_run(pipeline_name, model_level, config, dev_mode, tuna
     return score_mean, score_std
 
 
-def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predictions):
+def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predictions, load_feature):
     if bool(params.clean_experiment_directory_before_training) and os.path.isdir(params.experiment_directory):
         logger.info('Cleaning experiment_directory...')
         shutil.rmtree(params.experiment_directory)
 
     if model_level == 'first':
-        tables = _read_data(dev_mode) #SH : read here
+        tables = _read_data(dev_mode, load_feature) #SH : read here
         main_table_train = tables.train_set
         main_table_test = tables.test_set
     elif model_level == 'second':
@@ -349,7 +349,7 @@ def make_submission(submission_filepath):
 
 
 #SH : This is where the data is read
-def _read_data(dev_mode):
+def _read_data(dev_mode, load_feature=False):
     logger.info('Reading data...')
     if dev_mode:
         nrows = cfg.DEV_SAMPLE_SIZE
@@ -396,33 +396,58 @@ def _read_data(dev_mode):
 
     raw_data = {}
 
-    # read_csv : csv -> pandas dataframe
-    # maybe accessed by its key string
-    logger.info('Reading application_train ...')
-    application_train = pd.read_csv(params.train_filepath, nrows=nrows)
-    logger.info("Reading application_test ...")
-    application_test = pd.read_csv(params.test_filepath, nrows=nrows)
-    raw_data['application'] = pd.concat([application_train, application_test],
-                                        sort=False).drop(cfg.TARGET_COLUMNS, axis='columns')
-    raw_data['train_set'] = pd.DataFrame(application_train[cfg.ID_COLUMNS + cfg.TARGET_COLUMNS])
-    raw_data['test_set'] = pd.DataFrame(application_test[cfg.ID_COLUMNS])
+    if load_feature:
+        logger.info('Reading application_train ...')
+        application_train = pd.read_csv(params.train_filepath, nrows=nrows)
+        logger.info("Reading application_test ...")
+        application_test = pd.read_csv(params.test_filepath, nrows=nrows)
+        raw_data['application'] = pd.concat([application_train, application_test],
+                                            sort=False).drop(cfg.TARGET_COLUMNS, axis='columns')
+        raw_data['train_set'] = pd.DataFrame(application_train[cfg.ID_COLUMNS + cfg.TARGET_COLUMNS])
+        raw_data['test_set'] = pd.DataFrame(application_test[cfg.ID_COLUMNS])
 
-    logger.info("Reading bureau ...")
-    raw_data['bureau'] = pd.read_csv(params.bureau_filepath, nrows=nrows_bureau)
-    logger.info("Reading credit_card_balance ...")
-    raw_data['credit_card_balance'] = pd.read_csv(params.credit_card_balance_filepath, nrows=nrows_credit_card_balance)
-    logger.info("Reading pos_cash_balance ...")
-    raw_data['pos_cash_balance'] = pd.read_csv(params.POS_CASH_balance_filepath, nrows=nrows_pos_cash_balance)
-    logger.info("Reading previous_application ...")
-    raw_data['previous_application'] = pd.read_csv(params.previous_application_filepath,
-                                                   nrows=nrows_previous_applications)
-    logger.info("Reading bureau_balance ...")
-    raw_data['bureau_balance'] = pd.read_csv(params.bureau_balance_filepath, nrows=nrows_bureau_balance)
-    raw_data['bureau_balance'] = raw_data['bureau_balance'].merge(raw_data['bureau'][['SK_ID_CURR', 'SK_ID_BUREAU']],
-                                                                  on='SK_ID_BUREAU', how='right')
-    logger.info("Reading installments_payments ...")
-    raw_data['installments_payments'] = pd.read_csv(params.installments_payments_filepath,
-                                                    nrows=nrows_installments_payments)
+        logger.info("Loading features...")
+        raw_data['loaded_features'] = pd.read_csv(params.load_features_filepath,
+                                                  nrows=nrows_installments_payments)
+
+        raw_data['bureau'] = None
+        raw_data['credit_card_balance'] = None
+        raw_data['pos_cash_balance'] = None
+        raw_data['previous_application'] = None
+        raw_data['bureau_balance'] = None
+        raw_data['installments_payments'] = None
+
+    else:
+        # read_csv : csv -> pandas dataframe
+        # maybe accessed by its key string
+        logger.info('Reading application_train ...')
+        application_train = pd.read_csv(params.train_filepath, nrows=nrows)
+        logger.info("Reading application_test ...")
+        application_test = pd.read_csv(params.test_filepath, nrows=nrows)
+        raw_data['application'] = pd.concat([application_train, application_test],
+                                            sort=False).drop(cfg.TARGET_COLUMNS, axis='columns')
+        raw_data['train_set'] = pd.DataFrame(application_train[cfg.ID_COLUMNS + cfg.TARGET_COLUMNS])
+        raw_data['test_set'] = pd.DataFrame(application_test[cfg.ID_COLUMNS])
+
+        logger.info("Reading bureau ...")
+        raw_data['bureau'] = pd.read_csv(params.bureau_filepath, nrows=nrows_bureau)
+        logger.info("Reading credit_card_balance ...")
+        raw_data['credit_card_balance'] = pd.read_csv(params.credit_card_balance_filepath, nrows=nrows_credit_card_balance)
+        logger.info("Reading pos_cash_balance ...")
+        raw_data['pos_cash_balance'] = pd.read_csv(params.POS_CASH_balance_filepath, nrows=nrows_pos_cash_balance)
+        logger.info("Reading previous_application ...")
+        raw_data['previous_application'] = pd.read_csv(params.previous_application_filepath,
+                                                       nrows=nrows_previous_applications)
+        logger.info("Reading bureau_balance ...")
+        raw_data['bureau_balance'] = pd.read_csv(params.bureau_balance_filepath, nrows=nrows_bureau_balance)
+        raw_data['bureau_balance'] = raw_data['bureau_balance'].merge(raw_data['bureau'][['SK_ID_CURR', 'SK_ID_BUREAU']],
+                                                                      on='SK_ID_BUREAU', how='right')
+        logger.info("Reading installments_payments ...")
+        raw_data['installments_payments'] = pd.read_csv(params.installments_payments_filepath,
+                                                        nrows=nrows_installments_payments)
+
+        raw_data['loaded_features'] = None
+
     logger.info("Reading Done!!")
     return AttrDict(raw_data)
 
