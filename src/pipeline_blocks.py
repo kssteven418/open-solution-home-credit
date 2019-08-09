@@ -523,6 +523,7 @@ def oof_predictions(config, train_mode, suffix, **kwargs):
 
     feature_combiner = _join_features(numerical_features=[features],
                                       categorical_features=[],
+                                      use_nan_count=False,
                                       config=config, train_mode=train_mode, suffix=suffix, **kwargs)
     if train_mode:
         features_valid = Step(name='oof_predictions{}'.format(suffix),
@@ -534,6 +535,7 @@ def oof_predictions(config, train_mode, suffix, **kwargs):
 
         feature_combiner_valid = _join_features(numerical_features=[features_valid],
                                                 categorical_features=[],
+                                                use_nan_count=False,
                                                 config=config, train_mode=train_mode, suffix='_valid{}'.format(suffix),
                                                 **kwargs)
         return feature_combiner, feature_combiner_valid

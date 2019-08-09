@@ -264,6 +264,7 @@ def train_evaluate_cv_one_run(pipeline_name, model_level, config, dev_mode, tuna
 
 
 def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predictions, load_feature):
+    print('MODEL LEVEL', model_level)
     if bool(params.clean_experiment_directory_before_training) and os.path.isdir(params.experiment_directory):
         logger.info('Cleaning experiment_directory...')
         shutil.rmtree(params.experiment_directory)
@@ -273,7 +274,7 @@ def train_evaluate_predict_cv(pipeline_name, model_level, dev_mode, submit_predi
         main_table_train = tables.train_set
         main_table_test = tables.test_set
     elif model_level == 'second':
-        tables = _read_data(dev_mode=False)
+        tables = _read_data(dev_mode=False, load_feature=load_feature)
         main_table_train, main_table_test = read_oof_predictions(params.first_level_oof_predictions_dir,
                                                                  params.train_filepath,
                                                                  id_column=cfg.ID_COLUMNS[0],
@@ -481,6 +482,7 @@ def _fold_fit_evaluate_predict_loop(train_data_split, valid_data_split, test, ta
                      'installments_payments': {'X': tables.installments_payments},
                      'pos_cash_balance': {'X': tables.pos_cash_balance},
                      'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                      }
     elif model_level == 'second':
 
@@ -496,6 +498,7 @@ def _fold_fit_evaluate_predict_loop(train_data_split, valid_data_split, test, ta
                      'installments_payments': {'X': tables.installments_payments},
                      'pos_cash_balance': {'X': tables.pos_cash_balance},
                      'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                      }
     else:
         raise NotImplementedError
@@ -563,6 +566,7 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
                       'installments_payments': {'X': tables.installments_payments},
                       'pos_cash_balance': {'X': tables.pos_cash_balance},
                       'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                       }
         valid_data = {'main_table': {'X': valid_data_split[cfg.ID_COLUMNS],
                                      'y': None,
@@ -576,6 +580,7 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
                       'installments_payments': {'X': tables.installments_payments},
                       'pos_cash_balance': {'X': tables.pos_cash_balance},
                       'previous_application': {'X': tables.previous_application},
+                      'loaded_features': {'X': tables.loaded_features},
                       }
     else:
         raise NotImplementedError
@@ -590,7 +595,8 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, tables, fold_id,
     pipeline.clean_cache()
 
     pipeline = PIPELINES[pipeline_name](config=config, train_mode=False,
-                                        suffix='_fold_{}'.format(fold_id))
+                                        suffix='_fold_{}'.format(fold_id),
+                                        load_feature=load_feature)
     logger.info('Start pipeline transform on valid')
     pipeline.clean_cache()
     output_valid = pipeline.transform(valid_data)

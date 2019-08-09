@@ -145,6 +145,12 @@ def read_oof_predictions(prediction_dir, train_filepath, id_column, target_colum
     test_dfs = reduce(lambda df1, df2: pd.merge(df1, df2, on=[id_column, 'fold_id']), test_dfs)
     test_dfs.columns = _clean_columns(test_dfs, keep_colnames=[id_column, 'fold_id'], filepaths=filepaths_test)
 
+    
+    print('TRAIN OOF')
+    print(train_dfs)
+    print('TEST OOF')
+    print(test_dfs)
+
     return train_dfs, test_dfs
 
 

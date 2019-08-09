@@ -238,10 +238,19 @@ def light_gbm_stacking(config, train_mode, suffix='', use_features=False, load_f
                                                 cache_output=False,
                                                 load_persisted_output=False)
     if use_features:
-        features_engineered = blocks.feature_extraction(config, train_mode, suffix,
+        if not load_feature:
+            features_engineered = blocks.feature_extraction(config, train_mode, suffix,
                                                         persist_output=False,
                                                         cache_output=False,
                                                         load_persisted_output=False)
+        else:
+            features_engineered = blocks.feature_loader(config,
+                                         train_mode,
+                                         suffix,
+                                         persist_output=False,
+                                         cache_output=False,
+                                         load_persisted_output=False
+                                         )
         features = blocks.concat_features([features_oof_preds, features_engineered], config, train_mode, suffix,
                                           persist_output=False,
                                           cache_output=False,

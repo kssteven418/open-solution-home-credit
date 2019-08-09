@@ -124,6 +124,10 @@ class FeatureConcat(BaseTransformer):
         outputs['features'] = pd.concat(features_list, axis=1).astype(np.float32)
         outputs['feature_names'] = flatten_list(feature_names_list)
         outputs['categorical_features'] = flatten_list(categorical_features_list)
+        print('CONCAT')
+        print(outputs['features'])
+        print(outputs['feature_names'])
+        print(outputs['categorical_features'])
         return outputs
 
 
